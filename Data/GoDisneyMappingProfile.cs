@@ -31,6 +31,12 @@ namespace GoDisneyBlog.Data
                 .ForMember(c => c.paraThree, ex => ex.MapFrom(c => c.ParaThree))
                 .ForMember(c => c.paraFour, ex => ex.MapFrom(c => c.ParaFour))
                 .ReverseMap();
+
+            CreateMap<ContactForm, ContactFormViewModel>()
+              .ForMember(dest => dest.name, ex => ex.MapFrom(src => src.Name))
+              .ForMember(dest => dest.email, ex => ex.MapFrom(src => src.Email))
+              .ForMember(dest => dest.message, ex => ex.MapFrom(src => src.Message))
+              .ReverseMap();
         }
     }
 }

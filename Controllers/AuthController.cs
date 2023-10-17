@@ -39,7 +39,6 @@ namespace GoDisneyBlog.Controllers
             if (User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Index", "FallBack");
-
             }
 
             return View();
@@ -88,7 +87,7 @@ namespace GoDisneyBlog.Controllers
                             _config["Tokens:Issuer"],
                             _config["Tokens:Audience"],
                             claims,
-                            expires: DateTime.UtcNow.AddMinutes(300),
+                            expires: DateTime.UtcNow.AddMinutes(30),
                             signingCredentials: creds
                             );
                         var results = new
@@ -102,6 +101,37 @@ namespace GoDisneyBlog.Controllers
             }
 
             return BadRequest();
+        }
+
+        [HttpGet("ValidateToken/{token}")]
+        public IActionResult ValidateToken(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized("Token is missing");
+            }
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = _config["Tokens:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = _config["Tokens:Audience"],
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Tokens:Key"])),
+                ValidateLifetime = true,
+            };
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+                return Ok(new {message = tokenValidationParameters });
+            }
+            catch
+            {
+                return Unauthorized("Token is invalid");
+            }
         }
 
         [HttpPost]

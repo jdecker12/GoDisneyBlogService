@@ -33,6 +33,9 @@ builder.Services.AddAuthentication()
                 {
                     cfg.TokenValidationParameters = new TokenValidationParameters()
                     {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
                         ValidIssuer = _configConnect["Tokens:Issuer"],
                         ValidAudience = _configConnect["Tokens:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configConnect["Tokens:Key"]))
@@ -75,6 +78,7 @@ builder.Services.AddTransient<GoDisneySeeder>();
 
 builder.Services.AddScoped<IGoDisneyRepository, GoDisneyRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<IContactRepository, ContactRepository>();
 
 
 void CheckSameSite(HttpContext httpContext, CookieOptions options)
