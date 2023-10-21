@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,8 @@ var mappingConfig = new MapperConfiguration(mc =>
     mc.AddProfile(new GoDisneyMappingProfile());
 });
 
+builder.Services.AddSignalR();
+
 IMapper mapper = mappingConfig.CreateMapper();
 builder.Services.AddSingleton(mapper);
 builder.Services.AddCors(options =>
@@ -67,7 +70,17 @@ builder.Services.AddCors(options =>
                .AllowAnyMethod();
         builder.WithOrigins("http://localhost:4200") 
            .AllowAnyHeader()
-           .AllowAnyMethod();
+           .AllowAnyMethod()
+           .AllowCredentials();
+    });
+    options.AddPolicy("AllowOrigin", builder =>
+    {
+        builder
+            .WithOrigins("http://localhost:4200") // Specify your Angular client's origin
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .SetIsOriginAllowed((host) => true)
+            .AllowCredentials(); // Allow credentials
     });
 });
 
@@ -115,6 +128,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowWidget");
+app.UseCors("AllowOrigin");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -149,6 +163,7 @@ app.UseEndpoints(endpoints =>
        name: "default",
        pattern: "{controller=Fallback}/{action=Index}/{param?}"
     );
+    endpoints.MapHub<ChatHub>("/chatHub");
 });
 
 app.Run();
