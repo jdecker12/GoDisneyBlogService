@@ -36,7 +36,7 @@ namespace GoDisneyBlog.Controllers
 
         public IActionResult Login()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity!.IsAuthenticated)
             {
                 return RedirectToAction("Index", "FallBack");
             }

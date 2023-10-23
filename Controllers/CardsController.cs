@@ -56,6 +56,23 @@ namespace GoDisneyBlog.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet]
+        [Route("GetCardsInfiniteScroll/{cat}/{page:int}/{pageSize:int}")]
+        public async Task<IActionResult> GetCardsInfiniteScroll(string cat, int page, int pageSize)
+        {
+            try
+            {
+                var cards = await _repository.GetAllCardsAsync(cat, page, pageSize);
+                return Ok(_mapper.Map<IEnumerable<ICard>, IEnumerable<CardViewModel>>(cards));
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Failed to get card data");
+                return BadRequest($"Failed to get card data {ex}");
+            }
+        }
+
+        [AllowAnonymous]
         [Route("GetCardById/{id:int}")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCardById(int id)

@@ -1,4 +1,5 @@
 ﻿using GoDisneyBlog.Data.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,28 @@ namespace GoDisneyBlog.Data
         public void DeleteEntity(object model)
         {
             _context.Remove(model);
+        }
+
+        public async Task<IEnumerable<ICard>?> GetAllCardsAsync(string cat, int page, int pageSize)
+        {
+            int skip = (page - 1) * pageSize;
+            try
+            {
+                var result = await _context.Cards
+                    .Where(c => c.Category == cat)
+                    .OrderByDescending(c => c.Id)
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .Include(c => c.CardContents)
+                    .ToListAsync();
+
+                return result ?? null;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"Failed to get all Cards {ex}");
+                return null;
+            }
         }
 
         public async Task<IEnumerable<ICard>?> GetCard()
@@ -80,6 +103,8 @@ namespace GoDisneyBlog.Data
                 return null;
             }
         }
+
+        
 
         public async Task<IEnumerable<ICard>?> GetCardsByCat(string cat)
         {

@@ -10,6 +10,7 @@ namespace GoDisneyBlog.Data
     public interface IGoDisneyRepository
     {
         Task<IEnumerable<ICard>?> GetCard();
+        Task<IEnumerable<ICard>> GetAllCardsAsync(string cat, int page, int pageSize);
         Task<ICard?> GetCardById(int id);
         Task<bool> SaveAllAsync();
         void AddEntity(object model);
