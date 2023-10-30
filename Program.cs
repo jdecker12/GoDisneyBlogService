@@ -7,20 +7,24 @@ using System.Text;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-//builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-//    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
 var _config = builder.Configuration.GetSection("Tokens");
 var _configConnect = builder.Configuration;
 builder.Services.AddDbContext<GoDisneyContext>(cfg =>
 {
-    cfg.UseSqlServer(_configConnect.GetConnectionString("GoDisneyConnectionStringDev"));
-});
 
+    if (_configConnect.GetValue<string>("Environment") == "Development")
+    {
+        cfg.UseSqlServer(_configConnect.GetConnectionString("GoDisneyConnectionStringDev"));
+    }
+    else
+    {
+        cfg.UseSqlServer(_configConnect.GetConnectionString("GoDisneyConnectionString"));
+    }
+});
 
 builder.Services.AddIdentity<StoreUser, IdentityRole>(cfg =>
 {
@@ -66,8 +70,8 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader()
                .AllowAnyMethod();
         builder.WithOrigins("http://localhost:4200") 
-           .AllowAnyHeader()
-           .AllowAnyMethod();
+               .AllowAnyHeader()
+               .AllowAnyMethod();
     });
 });
 
@@ -120,10 +124,20 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var dbContext =  services.GetRequiredService<GoDisneyContext>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    if (!roleManager.RoleExistsAsync("Admin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("User").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("User")).Wait();
+    }
     var seeder = services.GetService<GoDisneySeeder>();
 
     dbContext.Database.EnsureCreated();
-    await seeder!.SeedAsync();  
+    await seeder!.SeedAsync();
 }
 
 app.Use(async (context, next) =>

@@ -134,6 +134,100 @@ namespace GoDisneyBlog.Controllers
             }
         }
 
+        [HttpPost("RegisterUser")]
+        public async Task<IActionResult> RegisterUser([FromBody] RegisterViewModel model)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    user = new StoreUser { FName = model.FName, LName = model.FName, Email = model.Email, UserName = model.UserName };
+                }
+              
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    if (model.UserRole == String.Empty || model.UserRole == null || model.UserRole == "User")
+                    {
+                        await _userManager.AddToRolesAsync(user, new List<string> { "User" });
+                    }
+                    else
+                    {
+                        await _userManager.AddToRolesAsync(user, new List<string> { model.UserRole });
+                    }
+                   
+                    return Ok(result.Succeeded);
+                }
+                else
+                {
+                    return BadRequest("Could not create user");
+                }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest($"Could not create user");
+                _logger.LogError($"Could not create user {ex}");
+            }
+        }
+
+        [HttpGet("GetUserRole/{email}")]
+        public async Task<IActionResult> GetUserRole(string email)
+        {
+            try
+            {
+                StoreUser user = await _userManager.FindByNameAsync(email);
+                if (user == null)
+                {
+                    throw new ArgumentException("User not found");
+                }
+
+                var userRole =  await _userManager.GetRolesAsync(user);
+                if (userRole == null)
+                {
+                    throw new ArgumentException("Role not found");
+                }
+                return Ok(userRole);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"Could not find user {ex}");
+                return BadRequest($"Could not find user {ex}");
+            }
+
+        }
+
+        [HttpDelete]
+        [Route("DeleteUser")]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(userId);
+                if (user == null)
+                {
+                    throw new ArgumentException("User not found");
+                }
+                var roles = await _userManager.GetRolesAsync(user);
+         
+                    foreach(var role in roles)
+                    {
+                        await _userManager.RemoveFromRolesAsync(user, new List<string> { role });
+                    }
+                
+
+                var result = await _userManager.DeleteAsync(user);
+                    return Ok(result.Succeeded);
+      
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Could not delete user");
+                return BadRequest($"Could not delete user {ex}");
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> StoreKey([FromBody] RememberMe model)
         {
